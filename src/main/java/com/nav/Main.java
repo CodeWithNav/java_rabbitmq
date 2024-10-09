@@ -1,33 +1,47 @@
 package com.nav;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Main {
     public static void main(String[] args) {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setHost("localhost");
+
+        String requestQueue = "requestQueue";
+
+
         Scanner sc = new Scanner(System.in);
         try(final Connection connection = connectionFactory.newConnection();
             final Channel channel = connection.createChannel()
             ) {
 
-            channel.queueDeclare("myQueue", true, false, false, null);
-
+            channel.queueDeclare(requestQueue, true, false, false, null);
+            String replyTo = channel.queueDeclare().getQueue();
             while (true) {
                 System.out.println(
                     "Press Enter to send a message to the queue. To exit press CTRL+C");
-                int length = sc.nextInt();
-
-                for(int i =0;i<length;i++){
-                    channel.basicPublish("", "myQueue", MessageProperties.PERSISTENT_TEXT_PLAIN, ("Hello World " + i).getBytes());
-                }
-
+                String message = sc.nextLine();
+                String correlationId = UUID.randomUUID().toString();
+                final AMQP.BasicProperties props = new AMQP.BasicProperties
+                    .Builder()
+                    .correlationId(correlationId)
+                    .replyTo(replyTo)
+                    .build();
+                channel.basicPublish("", requestQueue, props, message.getBytes(StandardCharsets.UTF_8));
                 System.out.println(" [x] Sent '");
+
+
+                channel.basicConsume(replyTo, true, (consumerTag, delivery) -> {
+                    if (delivery.getProperties().getCorrelationId().equals(correlationId)) {
+                        System.out.println(" [.] Got '" + new String(delivery.getBody(), StandardCharsets.UTF_8) + "'");
+                    }
+                }, consumerTag -> {
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();
