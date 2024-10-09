@@ -29,23 +29,15 @@ public class Receiver {
         try {
             final Connection connection = factory.newConnection();
             final Channel channel = connection.createChannel();
-            channel.queueDeclare("myQueue", true, false, false, null);
-            channel.basicQos(1);
+            String queueName = channel.queueDeclare().getQueue();
+            channel.queueBind(queueName, "logs", "");
             DeliverCallback callback = (consumerTag, delivery) -> {
                 String message = new String(delivery.getBody(), "UTF-8");
                 System.out.println(name+" Receive " + message + "'");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-
-                }finally {
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(),false);
-                }
-
-
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(),false);
             };
 
-            channel.basicConsume("myQueue", false, callback, consumerTag -> {
+            channel.basicConsume(queueName, false, callback, consumerTag -> {
             });
         } catch (Exception e) {
             e.printStackTrace();

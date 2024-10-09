@@ -16,7 +16,7 @@ public class Main {
             final Channel channel = connection.createChannel()
             ) {
 
-            channel.queueDeclare("myQueue", true, false, false, null);
+            channel.exchangeDeclare("logs", "fanout");
 
             while (true) {
                 System.out.println(
@@ -24,7 +24,7 @@ public class Main {
                 int length = sc.nextInt();
 
                 for(int i =0;i<length;i++){
-                    channel.basicPublish("", "myQueue", MessageProperties.PERSISTENT_TEXT_PLAIN, ("Hello World " + i).getBytes());
+                    channel.basicPublish("logs", "", null, ("Hello World " + i).getBytes());
                 }
 
                 System.out.println(" [x] Sent '");
