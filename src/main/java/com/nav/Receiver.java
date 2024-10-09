@@ -41,7 +41,7 @@ public class Receiver {
             final Channel channel = connection.createChannel();
             String queueName = channel.queueDeclare().getQueue();
             for(String level : logLevels){
-                channel.queueBind(queueName, "logs", level);
+                channel.queueBind(queueName, "topic_logs", level);
             }
             DeliverCallback callback = (consumerTag, delivery) -> {
                 String message = new String(delivery.getBody(), "UTF-8");

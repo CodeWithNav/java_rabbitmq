@@ -16,15 +16,15 @@ public class Main {
             final Channel channel = connection.createChannel()
             ) {
 
-            channel.exchangeDeclare("logs", "direct");
+            channel.exchangeDeclare("topic_logs", "topic");
 
             while (true) {
                 System.out.println(
                     "Press Enter to send a message to the queue. To exit press CTRL+C");
                 String message = sc.nextLine();
-                System.out.println("Enter Log level from 1..3 :");
+                System.out.println("Enter Topic :");
                 String logLevel = sc.nextLine();
-                channel.basicPublish("logs", logLevel, null, message.getBytes());
+                channel.basicPublish("topic_logs", logLevel, null, message.getBytes());
                 System.out.println("------Sent------");
             }
         } catch (Exception e) {
